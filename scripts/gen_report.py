@@ -6,13 +6,14 @@
 渲染单文件老板版 HTML 报告（内联 CSS + 内联 SVG，无外部依赖）。
 
 用法:
-    python gen_report.py                         # 用下方 CONFIG 默认值
+    python gen_report.py                         # 用 CONFIG 默认值（相对当前目录的 订单明细.xlsx）
     python gen_report.py <源.xlsx> <输出.html>    # 命令行覆盖路径
 
 所有口径开关都在 CONFIG 里；逻辑无需改动即可复用。
 """
 import argparse
 import os
+import sys
 import openpyxl
 import statistics
 from collections import defaultdict
@@ -21,8 +22,10 @@ from datetime import datetime
 # ============================ CONFIG（按需修改） ============================
 CONFIG = {
     # 数据源 / 输出（命令行可覆盖）
-    "src": r"C:/Users/HXT/Desktop/生产订单统计模板8.14.xlsx",
-    "out": r"C:/Users/HXT/WorkBuddy/wonderful/车间平衡点产能分析报告_老板版.html",
+    # 默认相对当前工作目录；公开仓库不含任何个人绝对路径。
+    # 实际使用时请以 CLI 传参为准：python gen_report.py <源.xlsx> <输出.html>
+    "src": "订单明细.xlsx",
+    "out": "车间平衡点产能分析报告_老板版.html",
     # 订单明细 sheet 名与列下标（0 起）
     "sheet": "订单明细",
     "date_col": 0,      # 订单日期
@@ -91,6 +94,12 @@ def main():
     args = ap.parse_args()
     SRC, OUT = args.src, args.out
     C = CONFIG
+
+    if not os.path.exists(SRC):
+        print(f"[错误] 找不到数据源：{SRC}")
+        print(f"请通过命令行指定：python gen_report.py <源.xlsx> <输出.html>")
+        print(f"或直接把源文件放到当前目录并命名为：{CONFIG['src']}")
+        sys.exit(1)
 
     qty_by_month, days_by_month, order_no_empty, status_filled = load(
         SRC, C["sheet"], C["date_col"], C["qty_col"])
